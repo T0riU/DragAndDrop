@@ -1,0 +1,230 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css">
+    <script src="http://code.jquery.com/jquery-1.11.3.js"></script>
+    <script src="http://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <style>
+        #drop-target {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            border: 4px solid #7312b4;
+        }
+
+        .drag-container {
+            display: flex;
+            flex-direction: row;
+            width: 1500px;
+            height: 1000px;
+            border: 5px solid rgba(15, 92, 15, 0.714);
+            padding: 5px;
+        }
+
+        .drag-container-element {
+            width: 500px;
+            background-color: rgb(247, 231, 191);
+            margin: 0 5px;
+        }
+
+        .debug {
+            background: rgb(130, 179, 172);
+            font-size: 24px;
+        }
+
+        .debug p {
+
+            margin: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="drag-container">
+        <div class="drag-elem-container drag-container-element">
+            <ul>
+                <li>
+                    <p ondragstart="dragStart(event)" draggable="true" id="dragtarget1">Car</p>
+                </li>
+                <li>
+                    <p ondragstart="dragStart(event)" draggable="true" id="dragtarget2">Flower</p>
+                </li>
+                <li>
+                    <p ondragstart="dragStart(event)" draggable="true" id="dragtarget3">Carrot</p>
+                </li>
+                <li>
+                    <p ondragstart="dragStart(event)" draggable="true" id="dragtarget4">TV</p>
+                </li>
+                <li>
+                    <p ondragstart="dragStart(event)" draggable="true" id="dragtarget5">Cup</p>
+                </li>
+            </ul>
+
+        </div>
+        <div class="drag-container-element" id="drop-target" ondrop="drop(event)" ondragover="allowDrop(event)">
+        </div>
+        <div class="debug drag-container-element">
+            <p id="demo"></p>
+        </div>
+    </div>
+    <script>
+        const heightDrag = 150;
+        const widthDrag = 50;
+        let divID = 0;
+        const img = document.createElement("img");
+        const divImg = document.createElement('div');
+        divImg.style.position = "absolute";
+        divImg.style.top = "0px";
+        divImg.style.left = "-500px";
+        document.querySelector('body').appendChild(divImg);
+        divImg.style.backgroundColor = "blue";
+        divImg.appendChild(img);
+        let BackUpElement;
+        let BackUpElementBool;
+        let BackUpTop;
+        let BackUpLeft;
+        let isOverlapping;
+        let Rotated = false;
+
+        function getOffset(el) {
+            const rect = el.getBoundingClientRect();
+            return {
+                left: parseInt(rect.left + window.scrollX),
+                top: parseInt(rect.top + window.scrollY)
+            };
+        }
+
+        function dragStart(event) {
+            event.dataTransfer.setData("text/plain", event.target.id);
+            // img.src = "img/a.jpg"
+            if (event.target.classList.contains("rotated")) {
+                img.style.width = heightDrag + "px";
+                img.style.height = widthDrag + "px";
+                event.dataTransfer.setDragImage(divImg, parseInt(heightDrag / 2), parseInt(widthDrag / 2));
+            } else {
+                img.style.width = widthDrag + "px";
+                img.style.height = heightDrag + "px";
+                event.dataTransfer.setDragImage(divImg, parseInt(widthDrag / 2), parseInt(heightDrag / 2));
+            }
+
+            BackUpElement = event.target;
+            BackUpTop = event.target.style.top.replace('px', '');
+            BackUpLeft = event.target.style.left.replace('px', '');
+            BackUpElementBool = event.target.classList.contains("dr-element");
+            if (BackUpElementBool) {
+                event.target.style.opacity = "0.1"
+            }
+        }
+
+        function dragEnd(event) {
+            event.target.style.opacity = "1";
+        }
+
+        function allowDrop(event) {
+            event.preventDefault();
+            isOverlapping = false;
+            // var position = ((event.pageX - getOffset(event.target).left) - parseInt(widthDrag / 2)) + ", " + ((event
+            //     .pageY - getOffset(event.target).top) - parseInt(heightDrag / 2));
+            let points = document.getElementsByClassName("dr-element");
+            for (let j = 0; j < points.length; j++) {
+
+                if (BackUpElement.id === points[j].id) {
+                    continue;
+                }
+                if ((event.pageX - parseInt(widthDrag / 2)) >= points[j].getBoundingClientRect().right ||
+                    (event.pageY - parseInt(heightDrag / 2)) >= points[j].getBoundingClientRect().bottom ||
+                    (event.pageX + parseInt(widthDrag / 2)) <= points[j].getBoundingClientRect().left ||
+                    (event.pageY + parseInt(heightDrag / 2)) <= points[j].getBoundingClientRect().top) {
+                    points[j].style.backgroundColor = "#7312b4";
+                } else {
+                    isOverlapping = true;
+                    points[j].style.backgroundColor = "red";
+                }
+            }
+        }
+
+        function drop(event) {
+            event.preventDefault();
+            let div;
+            if (isOverlapping) {
+                let points = document.getElementsByClassName("dr-element");
+                for (let j = 0; j < points.length; j++) {
+                    points[j].style.backgroundColor = "#7312b4";
+                }
+            }
+            if (!BackUpElementBool) {
+                div = document.createElement("div");
+                div.style.height = heightDrag + "px";
+                div.style.width = widthDrag + "px";
+                div.style.position = "absolute";
+                div.style.backgroundColor = "#7312b4";
+                div.setAttribute("ondragstart", "dragStart(event)");
+                div.setAttribute("ondragend", "dragEnd(event)");
+                div.setAttribute("onclick", "rotate(event);");
+                div.classList.add("dr-element");
+                div.innerHTML = divID;
+                div.draggable = true;
+                div.id = "drag-elem-" + divID;
+                //id increment
+                divID = divID + 1;
+            } else {
+                div = document.getElementById(event.dataTransfer.getData("Text"));
+            }
+            let left = (event.pageX - getOffset(event.currentTarget).left) - parseInt(widthDrag / 2);
+            let top = (event.pageY - getOffset(event.currentTarget).top) - parseInt(heightDrag / 2);
+            if (BackUpElement.classList.contains("rotated")) {
+                if (left > (document.getElementById("drop-target").clientWidth - ((heightDrag+widthDrag)/2))) {
+                    left = (document.getElementById("drop-target").clientWidth - ((heightDrag+widthDrag)/2));
+                }
+                if ((left-((heightDrag-widthDrag)/2)) < 0) {
+                    left = ((heightDrag-widthDrag)/2);
+                }
+                if (top > (document.getElementById("drop-target").clientHeight- ((heightDrag+widthDrag)/2))) {
+                    top = (document.getElementById("drop-target").clientHeight- ((heightDrag+widthDrag)/2));
+                }
+                if ((top-((widthDrag-heightDrag)/2)) < 0) {
+                    top = ((widthDrag-heightDrag)/2);
+                }
+            } else {
+                if (left > (document.getElementById("drop-target").clientWidth - widthDrag)) {
+                    left = (document.getElementById("drop-target").clientWidth - widthDrag);
+                }
+                if (left < 0) {
+                    left = 0;
+                }
+                if (top > (document.getElementById("drop-target").clientHeight) - heightDrag) {
+                    top = (document.getElementById("drop-target").clientHeight) - heightDrag;
+                }
+                if (top < 0) {
+                    top = 0;
+                }
+            }
+
+            div.style.left = left + "px";
+            div.style.top = top + "px";
+            event.currentTarget.appendChild(div);
+            if (isOverlapping) {
+                if (BackUpTop == "") {
+                    div.remove();
+                    divID = divID - 1;
+                }
+                BackUpElement.style.top = BackUpTop + "px";
+                BackUpElement.style.left = BackUpLeft + "px";
+            }
+        }
+
+        function rotate(event) {
+            if (event.target.classList.contains("rotated")) {
+                event.target.style.transform = 'rotate(0deg)';
+                event.target.classList.remove("rotated");
+            } else {
+                event.target.style.transform = 'rotate(90deg)';
+                event.target.classList.add("rotated");
+            }
+        }
+    </script>
+
+</body>
+
+</html>
